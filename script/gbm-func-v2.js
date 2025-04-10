@@ -807,7 +807,7 @@ function parallel_line() {
 						}
 						// data format sline = '(side line 1):(0=start,>0 end):index,(side line 1):(0=start,>0 end):(newline marker index):(newline marker uid),,,,....';
 						
-						polyBaseLine.markers.getAt(i-1).setDraggable(false);
+						polyBaseLine.markers.getAt(i-1).setDraggable(true);
 	 				}
 					
 					if (i == eP) {
@@ -848,7 +848,7 @@ function parallel_line() {
 							polyBaseLine.markers.getAt(i).sline += '¤' + newPoly.id + ':1:' + npidlastIndex + ':' + uidN;
 						}
 						
-						polyBaseLine.markers.getAt(i).setDraggable(false);
+						polyBaseLine.markers.getAt(i).setDraggable(true);
 							
 					} else {
 							
@@ -1799,7 +1799,7 @@ function drawRailCurve() {
 				MapToolbar.features['curveTab'][curve.id] = curve;
 								
 				MapToolbar.features["lineTab"][polyL.id].markers.getAt(currIdx).bdata.curve = curve.id ;
-				MapToolbar.features["lineTab"][polyL.id].markers.getAt(currIdx).setDraggable(false);
+				MapToolbar.features["lineTab"][polyL.id].markers.getAt(currIdx).setDraggable(true);
 														
 				var imgurl = "images/curve-sign.png";
 				var imgurl2 = "images/curve-sign2.png";
@@ -2449,7 +2449,7 @@ function drawRailTransitionCurve() {
 	
 	//MapToolbar.features["lineTab"][pid].markers.getAt(mid).note = '' ;
 	MapToolbar.features["lineTab"][pid].markers.getAt(mid).bdata.tcurve = tcurve.id; 
-	MapToolbar.features["lineTab"][pid].markers.getAt(mid).setDraggable(false);
+	MapToolbar.features["lineTab"][pid].markers.getAt(mid).setDraggable(true);
 	
 	var e1 = new google.maps.LatLng(tarr[0].lat(),tarr[0].lng()),      
 		image = new google.maps.MarkerImage(imgurlTcSt,
@@ -3354,13 +3354,16 @@ function saveElevationDataToFile(results) {
 // Takes an array of ElevationResult objects, draws the path on the map
 // and plots the elevation profile on a Visualization API ColumnChart.
 // plotElevation 함수 수정
+let isSaving = false;
+
 function plotElevation(results, status) {
 	if (status == google.maps.ElevationStatus.OK) {
+		if (isSaving) return; // Prevent multiple executions
+		isSaving = true; // Set flag to true
+
 		elevations = results;
 
-		
-
-		// 이하의 코드는 기존의 plotElevation 함수 내용
+		// Clear previous data and reinitialize the chart
 		var elevationPath = [];
 		for (var i = 0; i < results.length; i++) {
 			elevationPath.push(elevations[i].location);
@@ -3375,16 +3378,17 @@ function plotElevation(results, status) {
 			data.addRow([(i * 25).toString(), elevations[i].elevation, elevations[i].elevation]); 
 		}
 
-		// 추가 고도 데이터 처리
+		// Additional elevation data processing
 		var arrElv0 = $('#txtPitchDetails').val().split('\n');
 		var arrElv = [];
 		for (var ei = 0; ei < arrElv0.length; ei++) {
 			arrElv.push(arrElv0[ei].split(','));
 		}
 		
-		var pitch0 = null; var Xd0 = 0;
+		var pitch0 = null; 
+		var Xd0 = 0;
 		var arrlast = arrElv[0][4].split('§');
-		for (iv = 0; iv < arrlast.length; iv++) {
+		for (var iv = 0; iv < arrlast.length; iv++) {
 			if (arrlast[iv].indexOf('lastheight:') == 0) {
 				var lastH = parseFloat(arrlast[iv].split(':')[1]);
 				data.setValue(0, 2, lastH);			
@@ -3402,7 +3406,8 @@ function plotElevation(results, status) {
 				} else {
 					if (parseFloat(arrElv[ev][2]) != pitch0) {
 						var pitchA = pitch0 / 1000;
-						var y1; var y2;
+						var y1; 
+						var y2;
 						var cgsp = Xd0;
 						var cgep = parseInt(arrElv[ev][0]);
 		    			
@@ -3439,10 +3444,17 @@ function plotElevation(results, status) {
 			titleY: $.lang.convert('Elevation (m)'),
 			titleX: $.lang.convert('Distance (m) + ') + $('#txtPitchStartPointAtM').val() + ' m'
 		});
-		// 고도 데이터를 txt 파일로 저장
+
+		// Save elevation data to file (only once per function execution)
 		saveElevationDataToFile(results);
 	}
+	
+	// Reset the flag after the file has been saved
+	setTimeout(() => {
+		isSaving = false;
+	}, 1000); // Adjust the timeout as needed
 }
+
 
 function presetMarkerNote(pid, mid) {
 	var tab = pid.split('_')[0]+ 'Tab';
@@ -5280,7 +5292,7 @@ function processCurve(rowsData, i) {
 				MapToolbar.features['curveTab'][curve.id] = curve;
 								
 				MapToolbar.features["lineTab"][pid].markers.getAt(mid).bdata.curve = curve.id ;
-				MapToolbar.features["lineTab"][pid].markers.getAt(mid).setDraggable(false);
+				MapToolbar.features["lineTab"][pid].markers.getAt(mid).setDraggable(true);
 														
 				var imgurl = "images/curve-sign.png";
 				var imgurl2 = "images/curve-sign2.png";
@@ -5783,7 +5795,7 @@ function processTCurve(rowsData, i) {
 				
 				//MapToolbar.features["lineTab"][pid].markers.getAt(mid).note = '' ;
 				MapToolbar.features["lineTab"][pid].markers.getAt(mid).bdata.tcurve = tcurve.id; 
-				MapToolbar.features["lineTab"][pid].markers.getAt(mid).setDraggable(false);
+				MapToolbar.features["lineTab"][pid].markers.getAt(mid).setDraggable(true);
 				
 				var e1 = new google.maps.LatLng(Ttst.lat(),Ttst.lng()),      
 					image = new google.maps.MarkerImage(imgurlTcSt,
@@ -6764,7 +6776,7 @@ function ReloadPolyline (loadPoly,rd, n, rowsData, i, quickScan) {
 			MapToolbar.features['curveTab'][curve.id] = curve;
 							
 			MapToolbar.features["lineTab"][pid].markers.getAt(mid).bdata.curve = curve.id ;
-			MapToolbar.features["lineTab"][pid].markers.getAt(mid).setDraggable(false);
+			MapToolbar.features["lineTab"][pid].markers.getAt(mid).setDraggable(true);
 													
 			var imgurl = "images/curve-sign.png";
 			var imgurl2 = "images/curve-sign2.png";
@@ -6942,4 +6954,97 @@ function subwaySlopeLengthEnd() {
 	var theight = parseFloat($('#dInsUG_Lm2').val());
 	var slopelength = 1000 * (theight / pitch);
 	$('#dInsUG_sL2').html(Math.round(slopelength));	
+}
+
+/**
+ * 폴리라인의 시작점으로부터 현재 위치까지의 거리를 계산하는 함수
+ * @param {string} pid - 폴리라인의 ID
+ * @param {Object} currentPosition - 현재 위치 객체 mEvent.latLng;
+ * @returns {number} - 시작점으로부터 현재 위치까지의 거리
+ */
+function getDistanceFromStartToPoint(pid, currentPosition) {
+    if (pid.split('_')[0] !== 'line') {
+        alert('Warning! Not a line type polyline.');
+        return false;
+    }
+
+    var polyline = MapToolbar.features['lineTab'][pid];
+    if (!polyline) {
+        alert('Polyline does not exist.');
+        return false;
+    }
+
+    var allPoints = polyline.getPath().getArray();
+    var totalDistance = 0;
+
+    for (var i = 1; i < allPoints.length; i++) {
+        var pointA = allPoints[i - 1];
+        var pointB = allPoints[i];
+        var segmentDistance = google.maps.geometry.spherical.computeDistanceBetween(pointA, pointB);
+        
+        // Compute the distance from currentPosition to the start of the segment
+        var distanceToPointA = google.maps.geometry.spherical.computeDistanceBetween(currentPosition, pointA);
+        var distanceToPointB = google.maps.geometry.spherical.computeDistanceBetween(currentPosition, pointB);
+
+        // Check if the currentPosition is within the bounds of the segment
+        var distanceAlongSegment = google.maps.geometry.spherical.computeDistanceBetween(pointA, currentPosition);
+
+        if (distanceToPointA <= segmentDistance && distanceToPointB <= segmentDistance) {
+            return totalDistance + distanceAlongSegment;
+        }
+
+        totalDistance += segmentDistance;
+    }
+
+    // If currentPosition is beyond the last segment, return the total length of the polyline
+    return totalDistance;
+}
+
+/**
+ * 주어진 거리만큼 떨어진 위치의 좌표를 반환하는 함수
+ * @param {string} pid - 폴리라인의 ID
+ * @param {number} distanceKm - 시작점으로부터의 거리 (킬로미터)
+ * @returns {Object|null} - 계산된 좌표 객체 {lat: number, lng: number} 또는 좌표를 찾을 수 없을 경우 null
+ */
+function getPointAtDistance(pid, distanceKm) {
+    if (pid.split('_')[0] !== 'line') {
+        alert('Warning! Not a line type polyline.');
+        return null;
+    }
+
+    var polyline = MapToolbar.features['lineTab'][pid];
+    if (!polyline) {
+        alert('Polyline does not exist.');
+        return null;
+    }
+
+    var allPoints = polyline.getPath().getArray();
+    if (allPoints.length === 0) {
+        return null;
+    }
+
+    var totalDistance = 0;
+
+    // Start point (the beginning of the polyline)
+    var startPoint = allPoints[0];
+
+    for (var i = 1; i < allPoints.length; i++) {
+        var pointA = allPoints[i - 1];
+        var pointB = allPoints[i];
+        var segmentDistance = google.maps.geometry.spherical.computeDistanceBetween(pointA, pointB) / 1000; // Convert to kilometers
+
+        if (distanceKm <= segmentDistance) {
+            // Calculate the point at the given distance on this segment
+            var fraction = distanceKm / segmentDistance;
+            var lat = pointA.lat() + fraction * (pointB.lat() - pointA.lat());
+            var lng = pointA.lng() + fraction * (pointB.lng() - pointA.lng());
+            return { lat: lat, lng: lng };
+        }
+
+        distanceKm -= segmentDistance;
+    }
+
+    // If the distance exceeds the length of the polyline, return the endpoint of the polyline
+    var endPoint = allPoints[allPoints.length - 1];
+    return { lat: endPoint.lat(), lng: endPoint.lng() };
 }
