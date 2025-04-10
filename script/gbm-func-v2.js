@@ -1046,7 +1046,7 @@ function prelinepitch(polyid) {
 						var h2 = MapToolbar.features['tcurveTab'][cuvid].h2;
 						var dir = (MapToolbar.features['tcurveTab'][cuvid].Rc < 0) ? -1 : 1;
  	 							
-						/* if (tctype == 'cubic') { 
+						if (tctype == 'cubic') { 
 						
 							// Cubic Parabola : TotalX = Ls  (full length of transition by assumption)
 							var parts = 30; // any value, higher = more precision
@@ -1252,7 +1252,7 @@ function prelinepitch(polyid) {
 							}
 							// --- end							
 							
-						} else if (tctype == 'halfsine') { */
+						} else if (tctype == 'halfsine') {
 							var X2_2PI2 = Math.pow(TotalX,2)/(2*Math.pow(Math.PI,2));						
 							var parts = 30; // any value, higher = more precision on plotting
 							var ts = Ls / parts; // TotalX = full length of transition by assumption (see Cubic Parabola calculation), ntc new transition segment divided by any value
@@ -1462,7 +1462,7 @@ function prelinepitch(polyid) {
 							} 
 							path.push(Tted);
 
-						//}
+						}
 	
   
 					} else if ((epoly.markers.getAt(k).bdata.curve != '') || (epoly.markers.getAt(k).bdata.tcurve == '')) {
@@ -2002,7 +2002,7 @@ function drawRailTransitionCurve() {
 		$('#dialogRailTransitionCurve').dialog('close');	
 		return;
 	}
-	/*	
+		
 	if (document.getElementById('tc_cubic_parabola').checked) {
 	//cubic parabola
 		Ls = Math.pow(v_ds,3) / (Math.pow(3.6,3) * 0.3 * Rc); // spiral length
@@ -2199,7 +2199,7 @@ function drawRailTransitionCurve() {
 			
 		// cubic parabola plotter end
 				
-	} else { */
+	} else { 
 		//halfsine tangent
 		
 		if (gauge == 1067) {
@@ -2392,7 +2392,7 @@ function drawRailTransitionCurve() {
 		// halfsine curve plotter end
 		
 	
-	// }
+	}
  			
 	++MapToolbar["tcurveCounter"];
 	tcurve.id = 'tcurve_'+ MapToolbar["tcurveCounter"];
@@ -2752,7 +2752,7 @@ function curveCalculator(mod, lock) {
 		
 		var Lb0 = google.maps.geometry.spherical.computeDistanceBetween(m0,m1) ;
 		var Lb1 = google.maps.geometry.spherical.computeDistanceBetween(m1,m2) ;
-		/*
+		
 		if (document.getElementById('tc_cubic_parabola').checked) {
 		//cubic parabola
 			var Lt = Math.pow(v_ds,3) / (Math.pow(3.6,3) * 0.3 * Rc); // spiral length
@@ -2838,7 +2838,7 @@ function curveCalculator(mod, lock) {
 		}		
 			
 			
-		} else { */
+		} else {
 		//halfsine tangent
 			if (gauge == 1067) {
 				kc = 1;
@@ -2918,7 +2918,7 @@ function curveCalculator(mod, lock) {
 			msgTxt += '<img src="images/warning.png" width="16" height="16" align="left">&nbsp;'+$.lang.convert('<strong> Caution!: </strong> Unable to fit transition curve at the intersection.<br />Transition curve is too big, please reduce curve radius or the design speed.<br />');						
 		}				
 			
-		// }
+		}
 				
 		$('#tdata').html(msgTxt);
 	}
@@ -5569,7 +5569,7 @@ function processTCurve(rowsData, i) {
 				var tarr = [];
 
 						
-				/* if (tctype == 'cubic') {
+				if (tctype == 'cubic') {
 					//cubic parabola
 					var parts = 30; // any value, higher = more precision
 					var ts = Ls / parts; //transition segment divided by any value (for plotting)
@@ -5628,7 +5628,7 @@ function processTCurve(rowsData, i) {
 				
 					// cubic parabola plotter end
 							
-				} else { */ 
+				} else {
 					//halfsine tangent	
 					var X2_2PI2 = Math.pow(TotalX,2)/(2*Math.pow(Math.PI,2));
 					var parts = 30; // any value, higher = more precision on plotting
@@ -5683,7 +5683,7 @@ function processTCurve(rowsData, i) {
 					// halfsine curve plotter end
 					
 				
-				//}
+				}
 
 				var  color = MapToolbar.getColor(true),
 					tcurve = new google.maps.Polyline({
