@@ -1977,22 +1977,22 @@ function drawRailTransitionCurve() {
 		return;
 	}	
 
-	var m0 = polyL.markers.getAt(mid-1).getPosition();
-	var m1 = polyL.markers.getAt(mid).getPosition();
-	var m2 = polyL.markers.getAt(mid+1).getPosition();
-	var h1 = google.maps.geometry.spherical.computeHeading(m0,m1);
-	var h2 = google.maps.geometry.spherical.computeHeading(m1,m2);
-	var fic = intersection_angle(h1,h2);
-	var thetaD = fic.angle; // θ intersection angle
-	var dir = fic.direction;
+	var m0 = polyL.markers.getAt(mid-1).getPosition();//BP
+	var m1 = polyL.markers.getAt(mid).getPosition();//IP
+	var m2 = polyL.markers.getAt(mid+1).getPosition();//EP
+	var h1 = google.maps.geometry.spherical.computeHeading(m0,m1);//방위각1
+	var h2 = google.maps.geometry.spherical.computeHeading(m1,m2);//방위각2
+	var fic = intersection_angle(h1,h2);//교차내각 계산함수
+	var thetaD = fic.angle; // 교차 내각 각도를 반환
+	var dir = fic.direction;//-1 or 1
 	
-	var Lb0 = google.maps.geometry.spherical.computeDistanceBetween(m0,m1) ;
-	var Lb1 = google.maps.geometry.spherical.computeDistanceBetween(m1,m2) ;
+	var Lb0 = google.maps.geometry.spherical.computeDistanceBetween(m0,m1) ;//BP-IP거리
+	var Lb1 = google.maps.geometry.spherical.computeDistanceBetween(m1,m2) ;//IP-EP거리
 		
-	var thetaR = thetaD * (Math.PI / 180);
+	var thetaR = thetaD * (Math.PI / 180);//교차 내각 라디안으로 변환
 	
-	var delta = 180 - thetaD; //Δ deflectionAngle
-	var deltaRad = delta * (Math.PI / 180);
+	var delta = 180 - thetaD; //교각IA
+	var deltaRad = delta * (Math.PI / 180);//교각 IA 라다안으로 변환
 	
 	var delta_C = 0;
 	var delta_S = 0;
@@ -2004,23 +2004,47 @@ function drawRailTransitionCurve() {
 	}
 		
 	if (document.getElementById('tc_cubic_parabola').checked) {
-	//cubic parabola
-		Ls = Math.pow(v_ds,3) / (Math.pow(3.6,3) * 0.3 * Rc); // spiral length
-		var S = (Ls * Ls) /(24 * Rc); //shift of the curve 
-		var IT = ((Rc + S)/(Math.tan(thetaR/2)))+ (Ls/2);
-			
-		Lc = deltaRad * Rc - Ls; // 2 x Ls/2
-		var TotalL = Lc + 2 * Ls;
+	//3차포물선
+		var m = 2100;
+		var x1 = m * (cant * 0.001);//X1
+		var theta_pc = Math.atan(x1 / (2 * Rc));//PC점의 접선각 라디안
+		var theta_pc_degree = 180 / Math.PI * (Math.atan (x1 / (2 * Rc))); //PC점의 접선각 도단위
+		var x2 = x1-(Rc * Math.sin(theta_pc));//X2
+		Ls = x1 * (1 + ((Math.tan(theta_pc) ** 2)) / 10);// 완화곡선 길이 L
+		var TotalY = (Math.pow(x1 , 2))/(6 * Rc); // Y1
+		var F = TotalY - Rc * (1 - Math.cos((theta_pc))); //F
+		var S = 1 / (Math.cos((delta / 2)*(Math.PI/180))) * F;//S
+		var W = (Rc + F)*Math.tan((delta / 2)*(Math.PI/180));//W
+		TL = x2 + W;// TL
+		var SPtoPC_bangwigack = 0;
+		var Cc = 0;//원곡선 중심점
+		
+		if (Rc * -1 < 0) {
+		  if (h1 - theta_pc_degree < 0) {
+		    SPtoPC_bangwigack = h1 - theta_pc_degree + 360;
+		  } else {
+		    SPtoPC_bangwigack = h1 - theta_pc_degree;
+		  }
+		} else {
+		  if (h1 + theta_pc_degree > 360) {
+		    SPtoPC_bangwigack = h1 + theta_pc_degree - 360;
+		  } else {
+		    SPtoPC_bangwigack = h1 + theta_pc_degree;
+		  }
+		}
+		
+		Lc = ((delta * Math.PI/180) - 2 * (theta_pc_degree * Math.PI/180)) * Rc; //원곡선 길이
+		var TotalL = Lc + 2 * Ls; //전체 CL
 	
-		delta_C = (Lc*360)/(2*Math.PI*Rc); //?c
-		delta_S = (delta - delta_C)/2; //?s
+		delta_C = (Lc*360)/(2*Math.PI*Rc); //원곡선 내각
+		delta_S = (delta - delta_C)/2; //교각 - 원곡선 내각
 	
 		if (delta_S < 0) {
 			alert($.lang.convert('Caution: the deflection angle is too small to introduce transition curve. \nCurrent deflection angle is : ') + (Math.round(delta*100)/100) + '°.');
 			$('#dialogRailTransitionCurve').dialog('close');	
 			return;
 		}
-	
+		//3차포물선 최고곡선반경 계산
 		var rmin1 = 1.39 * Math.sqrt(Rc * Ls); // method 1		
 		var rmin2 = Math.sqrt(Math.pow(v_ds,3)/(Math.pow(3.6,3)*0.3*deltaRad));// method 2
 		var rmin = 0;
@@ -2037,40 +2061,40 @@ function drawRailTransitionCurve() {
 			alert($.lang.convert('Caution: Minimum radius for this deflection angle is : ') + rmin + ' m.'); 
 			return;
 		}
-				
-		var IT = ((Rc + S)/(Math.tan(thetaR/2)))+ (Ls/2); // Total tangent length from intersection point to transition start/end point
-		var K = Ls/2;
-		var ntp1 = google.maps.geometry.spherical.computeOffset(m1, -IT, h1); //point 1 : transition start
-		var ntp2 = google.maps.geometry.spherical.computeOffset(m1, IT, h2); //point 2 : transition end
+		//
 		
-		var tditcl = (Rc + S)/(Math.tan(thetaR/2));			
-		var tditc0 = google.maps.geometry.spherical.computeOffset(m1, -tditcl, h1);
-		var tditc1 = google.maps.geometry.spherical.computeOffset(m1, tditcl, h2);
-	
-		var nscc1 = google.maps.geometry.spherical.computeOffset(tditc0, (Rc+S), h1 + (90 * dir));
-		var nscc2 = google.maps.geometry.spherical.computeOffset(tditc0, (Rc+S), h1 - (90 * dir));
-		var nscc3 = google.maps.geometry.spherical.computeOffset(tditc1, (Rc+S), h2 + (90 * dir));
-		var nscc4 = google.maps.geometry.spherical.computeOffset(tditc1, (Rc+S), h2 - (90 * dir));	
-
-		var Cc = null;
-		TL = IT;
+		//SP점 위치
+		var ntp1 = google.maps.geometry.spherical.computeOffset(m1, -TL, h1);
 		
-		if (google.maps.geometry.spherical.computeDistanceBetween(nscc1,nscc3) <= 1) {
-			Cc = nscc1;
-		} else if (google.maps.geometry.spherical.computeDistanceBetween(nscc1,nscc4) <= 1) {
-			Cc = nscc2;
-		} else if (google.maps.geometry.spherical.computeDistanceBetween(nscc2,nscc3) <= 1) {
-			Cc = nscc3;
-		} else if (google.maps.geometry.spherical.computeDistanceBetween(nscc2,nscc4) <= 1) {
-			Cc = nscc4;
-		} else {
-			Cc = nscc1;
-		}
-
+		//PS점 위치
+		var ntp2 = google.maps.geometry.spherical.computeOffset(m1, TL, h2);
+		
+		
+		//PC점 위치 구하기
+		//1 먼저 SP에서 X1점의 좌표구하고
+		//2 1에서 y1만큼 이동한 좌표 구하면 pc점 위치 완쇼
+		
+		//h방위각은 북측 0~180값임
+		
+		//SP에서 X1만큼 이동한 좌표
+		var x1_coordinate = google.maps.geometry.spherical.computeOffset(ntp1, x1, h1);
+		
+		//PS에서 X1만큼 이동한 좌표
+		var x1_coordinate_Reverse = google.maps.geometry.spherical.computeOffset(ntp2, -x1, h2);
+		//PC점 위치
+		var tditc0 = google.maps.geometry.spherical.computeOffset(x1_coordinate, TotalY, h1 + (90 * dir));
+		//CP점 위치
+		var tditc1 = google.maps.geometry.spherical.computeOffset(x1_coordinate_Reverse, TotalY, h1 + (90 * dir));
+		
+		//PC 접선 방위각
+		var PC_tangent_azimuth = h1 - theta_pc_degree;
+		//원곡선중심
+		var Cc = google.maps.geometry.spherical.computeOffset(tditc0, Rc, PC_tangent_azimuth + (90 * dir));
+		
 		// Cubic Parabola : TotalX = Ls  (full length of transition by assumption)
 		var parts = 30; // any value, higher = more precision
 		var ts = Ls / parts; //transition segment divided by any value (for plotting)
-		var TotalY = (Math.pow(Ls,2))/(6*Rc); //(L^2/6R)
+		var TotalY = (Math.pow(x1 , 2))/(6 * Rc); // Y1
 		
 		if (polyL.markers.getAt(mid-1).bdata.tcurve != '') {
 			var TL0 = MapToolbar.features['tcurveTab'][polyL.markers.getAt(mid-1).bdata.tcurve].TL;
@@ -2117,8 +2141,8 @@ function drawRailTransitionCurve() {
 		for (var i=0; (i <= parts); i++) {     
 			if (i == 0) {
 				tarr.push(ntp1);
-			} else if (i== parts) {
-				var scp1x = google.maps.geometry.spherical.computeOffset(ntp1, Ls, h1);
+			} else if (i== parts) {//Ls를 x1으로 수정함.
+				var scp1x = google.maps.geometry.spherical.computeOffset(ntp1, x1, h1);
 				var scp1y = google.maps.geometry.spherical.computeOffset(scp1x, TotalY, h1+(90 * dir));
 				var xo = google.maps.geometry.spherical.computeHeading(tarr[i-1],scp1y);
 				var xd = google.maps.geometry.spherical.computeDistanceBetween(tarr[i-1],scp1y);
@@ -2126,7 +2150,7 @@ function drawRailTransitionCurve() {
 				tarr.push(scp1);   	  		 
 			} else {
 				var yi = google.maps.geometry.spherical.computeOffset(ntp1, ts * i, h1);
-				var ycd = (Math.pow((ts * i),3))/(6 * Rc * Ls);
+				var ycd = (Math.pow((ts * i),3))/(6 * Rc * x1);
 				var yd = google.maps.geometry.spherical.computeOffset(yi, ycd , h1+(90 * dir));
 				var xo = google.maps.geometry.spherical.computeHeading(tarr[i-1],yd);
 				var xd = google.maps.geometry.spherical.computeDistanceBetween(tarr[i-1],yd);
@@ -2135,18 +2159,17 @@ function drawRailTransitionCurve() {
 			}
 		}
 		// --- end
-	
+		
 		var tarrL = tarr.length;
 		var scp2x = google.maps.geometry.spherical.computeOffset(ntp2, -Ls, h2);
 		var scp2y = google.maps.geometry.spherical.computeOffset(scp2x, -TotalY, h2-(90 * dir));
 		var xo = google.maps.geometry.spherical.computeHeading(tarr[tarrL-1],scp2y);
 		var xd = google.maps.geometry.spherical.computeDistanceBetween(tarr[tarrL-1],scp2y);
 		scp2 = google.maps.geometry.spherical.computeOffset(tarr[tarrL-1], xd, xo);
-	
 		
 		var points = Math.ceil(Lc/25);
-		var iB = google.maps.geometry.spherical.computeHeading(Cc,scp1);
-		var fB = google.maps.geometry.spherical.computeHeading(Cc,scp2);
+		var iB = google.maps.geometry.spherical.computeHeading(Cc,scp1);//180사이의 방위각 92
+		var fB = google.maps.geometry.spherical.computeHeading(Cc,scp2);// 119
 	
 		var br = fB - iB;
 		if (br >  180) {br -= 360;}
@@ -2175,7 +2198,7 @@ function drawRailTransitionCurve() {
 				tarr.push(scp2);  	  		 
 			} else {
 				var yi = google.maps.geometry.spherical.computeOffset(ntp2, -ts * i, h2);
-				var ycd = (Math.pow((ts * i),3))/(6 * Rc * Ls);
+				var ycd = (Math.pow((ts * i),3))/(6 * Rc * x1);
 				var yd = google.maps.geometry.spherical.computeOffset(yi, -ycd , h2-(90 * dir));
 				var xo = google.maps.geometry.spherical.computeHeading(tarr[i-1],yd);
 				var xd = google.maps.geometry.spherical.computeDistanceBetween(tarr[i-1],yd);
@@ -2191,13 +2214,14 @@ function drawRailTransitionCurve() {
 			tcurve = new google.maps.Polyline({
 			path: tarr,
 			strokeColor: "#00E600",
-			strokeOpacity: 0.7,
+			strokeOpacity: 1,
 			geodesic: true,
 			map: map,
-			strokeWeight: 1
+			strokeWeight: 4
 		});	
 			
 		// cubic parabola plotter end
+				
 				
 	} else { 
 		//halfsine tangent
@@ -2384,10 +2408,10 @@ function drawRailTransitionCurve() {
 			tcurve = new google.maps.Polyline({
 			path: tarr,
 			strokeColor: "#00E600",
-			strokeOpacity: 0.7,
+			strokeOpacity: 1,
 			geodesic: true,
 			map: map,
-			strokeWeight: 1
+			strokeWeight: 4
 		});
 		// halfsine curve plotter end
 		
@@ -2400,7 +2424,7 @@ function drawRailTransitionCurve() {
 	tcurve.pid = polyL.id;
 	tcurve.mid = mid;
 	tcurve.ptype = 'tcurve';
-	tcurve.tctype = 'halfsine'; //(document.getElementById('tc_cubic_parabola').checked) ? 'cubic' : 'halfsine';
+	tcurve.tctype = (document.getElementById('tc_cubic_parabola').checked) ? 'cubic' : 'halfsine';
 	tcurve.note = ''; 
 	tcurve.Rc = Rc * dir,
  	tcurve.cant = cant;
@@ -2408,7 +2432,7 @@ function drawRailTransitionCurve() {
  	tcurve.Ls = Ls;
  	tcurve.Lc = Lc;
  	tcurve.K = K;
-	tcurve.TotalX = TotalX; //(document.getElementById('tc_cubic_parabola').checked) ? Ls : TotalX;
+	tcurve.TotalX = (document.getElementById('tc_cubic_parabola').checked) ? Ls : TotalX;
 	tcurve.TotalY = TotalY;
  	tcurve.Cc = Cc;
  	tcurve.Ttst = tarr[0];
@@ -2420,14 +2444,14 @@ function drawRailTransitionCurve() {
  	tcurve.h2 = h2;
 
  	tcurve.TL = TL;
- 	tcurve.shift = P;//(document.getElementById('tc_cubic_parabola').checked) ? S : P;
+ 	tcurve.shift = (document.getElementById('tc_cubic_parabola').checked) ? S : P;
  	 	
  	tcurve.forceSL = true;
  	tcurve.delta = delta;
  	tcurve.theta = thetaD;
  
- 	tcurve.deltaS = delta_Sd; //(document.getElementById('tc_cubic_parabola').checked) ? delta_S : delta_Sd;
- 	tcurve.deltaC =  delta_Cd; //(document.getElementById('tc_cubic_parabola').checked) ? delta_C : delta_Cd;
+ 	tcurve.deltaS = (document.getElementById('tc_cubic_parabola').checked) ? delta_S : delta_Sd;
+ 	tcurve.deltaC =  (document.getElementById('tc_cubic_parabola').checked) ? delta_C : delta_Cd;
  	tcurve.railindex = railIndex;	//circular rail index
 	tcurve.route = (polyL.route != '') ? polyL.route : '';	
 	tcurve.$el = MapToolbar.addFeatureEntry(tcurve.id);
@@ -2755,12 +2779,23 @@ function curveCalculator(mod, lock) {
 		
 		if (document.getElementById('tc_cubic_parabola').checked) {
 		//cubic parabola
-			var Lt = Math.pow(v_ds,3) / (Math.pow(3.6,3) * 0.3 * Rc); // spiral length
-			var S = (Lt * Lt) /(24 * Rc); //shift of the curve 
-			var IT = ((Rc + S)/(Math.tan(thetaR/2)))+ (Lt/2);
-			var TL = IT;
-			var Lc = deltaRad * Rc - Lt; // 2 x Lt/2
-			var TotalL = Lc + 2 * Lt;
+			var m = 2100;
+			var x1 = m * (cant * 0.001);//X1
+			var theta_pc = Math.atan(x1 / (2 * Rc));//PC점의 접선각 라디안
+			var theta_pc_degree = 180 / Math.PI * (Math.atan (x1 / (2 * Rc))); //PC점의 접선각 도단위
+			var x2 = x1-(Rc * Math.sin(theta_pc));//X2
+			var Ls = x1 * (1 + ((Math.tan(theta_pc) ** 2)) / 10);// 완화곡선 길이 L
+			var TotalY = (Math.pow(x1 , 2))/(6 * Rc); // Y1
+			var F = TotalY - Rc * (1 - Math.cos((theta_pc))); //F
+			var S = 1 / (Math.cos((delta / 2)*(Math.PI/180))) * F;//S
+			var W = (Rc + F)*Math.tan((delta / 2)*(Math.PI/180));//W
+			var TL = x2 + W;// TL
+			var SPtoPC_bangwigack = 0;
+			var Cc = 0;//원곡선 중심점
+			var Lt = Ls
+			var IT = TL;
+			var Lc = ((delta * Math.PI/180) - 2 * (theta_pc_degree * Math.PI/180)) * Rc; //원곡선 길이
+			var TotalL = Lc + 2 * Ls; //전체 CL
 	
 			var delta_C = (Lc*360)/(2*Math.PI*Rc); //?c
 			var delta_S = (delta - delta_C)/2; //?s
