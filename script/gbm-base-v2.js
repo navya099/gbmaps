@@ -286,7 +286,7 @@ addPoint : function(e, poly, index) {
 				position: e,
 				map: map,
 				title: poly.id + '(' + index + ')',
-				draggable: false,
+				draggable: true,
 				icon: image,
 				note: '', // any extra note 
 				bdata: {height:'',pitch:''},
@@ -339,7 +339,7 @@ addPoint : function(e, poly, index) {
 			marker = new google.maps.Marker({
 			position: e,
 			map: map,
-			draggable: false,
+			draggable: true,
 			icon: image,
 			title: poly.id + '(' + index + ')',
 			note: '', // any extra note 
@@ -978,8 +978,9 @@ addPoint : function(e, poly, index) {
 		    path.setAt(marker.index, marker.getPosition());
 		    var position = marker.getPosition(),
 			p;
+			//마커 드래그시 폴리선 분할하는 코드
 			//get previous point
-		    if(typeof path.getAt(marker.index-1) != 'undefined'){
+		    /*if(typeof path.getAt(marker.index-1) != 'undefined'){
 			    var m1 = path.getAt(marker.index -1);
 				p = MapToolbar.getMidPoint(position, m1);		
 				MapToolbar.addPoint(p, poly, marker.index);						
@@ -989,7 +990,8 @@ addPoint : function(e, poly, index) {
 			    var m2 = path.getAt(marker.index+1);
 				p = MapToolbar.getMidPoint(position, m2);		
 				MapToolbar.addPoint(p, poly, marker.index+1);						
-		    }			
+		    }*/	
+			//주석 종료
 			}
 			
 	});
@@ -1389,7 +1391,7 @@ MapToolbar.Feature.prototype.poly = function(type) {
 	if(type=="shape"){
 		poly = self.createShape( {strokeWeight: 1, fillColor: color, fillOpacity: 0.0}, path );
 	}else if(type=="line"){
-		poly = self.createLine( {strokeWeight: 1, strokeColor: color }, path );
+		poly = self.createLine( {strokeWeight: 4, strokeColor: '#ff0000' }, path );
 	}else if(type=="ruler" || type=="protractor"){
 		poly = self.createLine( {strokeWeight: 1, strokeColor: '#C80000', strokeOpacity: 0.3 }, path );
 	}
@@ -1405,12 +1407,12 @@ MapToolbar.Feature.prototype.poly = function(type) {
 	google.maps.event.addListener(poly, "mouseout", function(){
     if (MapToolbar.currentlyDragging) return;
     if (type=='line' || type=='ruler' || type=='protractor') {
-			poly.setOptions( {strokeWeight: 1} );
+			poly.setOptions( {strokeWeight: 4} );
 		}
 	});	
 	
 	google.maps.event.addListener(poly, "click", function(mEvent){
-		
+		 var position = mEvent.latLng;
 		if (type=='line') {
 
 			if ($('#dialogSwitchTrack').dialog('isOpen')) {
@@ -1532,13 +1534,19 @@ MapToolbar.Feature.prototype.poly = function(type) {
 			
 			infoWindowTxt += '</div><div class="infow_text">';
 			
-			infoWindowTxt += $.lang.convert('Polyline Length : ');
+			infoWindowTxt += $.lang.convert('TOTAL Length : ');
+			
+			
 			
 			if (Lpoly < 1000) {
 				infoWindowTxt += Lpoly.toFixed(2) + ' m.<br />';
 			} else {
 				infoWindowTxt += (Lpoly/1000).toFixed(6) + ' km.<br />';
 			}
+			infoWindowTxt += $.lang.convert('current Length : ');
+			var currentd = getDistanceFromStartToPoint(poly.id, position)
+			infoWindowTxt += (currentd/1000).toFixed(6) + ' km.<br />';
+			
 			infoWindowTxt += $.lang.convert('Horizontal Length : ');
 			if (LwCurve < 1000) {
 				infoWindowTxt += LwCurve.toFixed(2) + ' m.<br />';
