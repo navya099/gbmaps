@@ -1766,10 +1766,10 @@ function drawRailCurve() {
 				var curve = new google.maps.Polyline({
 					path: extp,
 					strokeColor: "#FF0000",
-					strokeOpacity: 0.7,
+					strokeOpacity: 1,
 					geodesic: true,
 					map: map,
-					strokeWeight: 1
+					strokeWeight: 4
 				});
 				//curve.setMap(map);
 				
@@ -1807,7 +1807,7 @@ function drawRailCurve() {
  
 				var e1 = new google.maps.LatLng(extp[0].lat(),extp[0].lng()),      
 					image = new google.maps.MarkerImage(imgurl,
-					new google.maps.Size(6, 6),
+					new google.maps.Size(10, 10),
 					new google.maps.Point(0, 0),
 					new google.maps.Point(5, 5)), 
 					index =0,
@@ -1831,7 +1831,7 @@ function drawRailCurve() {
 
 				var e2 = new google.maps.LatLng(extp[extp.length-1].lat(),extp[extp.length-1].lng()),      
 				image= new google.maps.MarkerImage(imgurl2,
-					new google.maps.Size(6, 6),
+					new google.maps.Size(10, 10),
 					new google.maps.Point(0, 0),
 					new google.maps.Point(5, 5)), 
 				index =1,
@@ -1854,9 +1854,9 @@ function drawRailCurve() {
 	    
 				var ec = new google.maps.LatLng(Cc.lat(),Cc.lng()),      
 				image= new google.maps.MarkerImage(imgccurl,
-					new google.maps.Size(6, 6),
+					new google.maps.Size(10, 10),
 					new google.maps.Point(0, 0),
-					new google.maps.Point(3, 3)), 
+					new google.maps.Point(5, 5)), 
 				index =2,
 				marker = new google.maps.Marker({
 						position: Cc,
@@ -1980,11 +1980,11 @@ function drawRailTransitionCurve() {
 	var m0 = polyL.markers.getAt(mid-1).getPosition();//BP
 	var m1 = polyL.markers.getAt(mid).getPosition();//IP
 	var m2 = polyL.markers.getAt(mid+1).getPosition();//EP
-	var h1 = google.maps.geometry.spherical.computeHeading(m0,m1);//방위각1
-	var h2 = google.maps.geometry.spherical.computeHeading(m1,m2);//방위각2
+	var h1 = google.maps.geometry.spherical.computeHeading(m0,m1);//방위각1 180사이의 값
+	var h2 = google.maps.geometry.spherical.computeHeading(m1,m2);//방위각2 180사이의 값
 	var fic = intersection_angle(h1,h2);//교차내각 계산함수
 	var thetaD = fic.angle; // 교차 내각 각도를 반환
-	var dir = fic.direction;//-1 or 1
+	var dir = fic.direction;//-1 좌향 or 1 우향
 	
 	var Lb0 = google.maps.geometry.spherical.computeDistanceBetween(m0,m1) ;//BP-IP거리
 	var Lb1 = google.maps.geometry.spherical.computeDistanceBetween(m1,m2) ;//IP-EP거리
@@ -2005,7 +2005,7 @@ function drawRailTransitionCurve() {
 		
 	if (document.getElementById('tc_cubic_parabola').checked) {
 	//3차포물선
-		var m = 2100;
+		var m = 7.31 * v_ds
 		var x1 = m * (cant * 0.001);//X1
 		var theta_pc = Math.atan(x1 / (2 * Rc));//PC점의 접선각 라디안
 		var theta_pc_degree = 180 / Math.PI * (Math.atan (x1 / (2 * Rc))); //PC점의 접선각 도단위
@@ -2016,22 +2016,8 @@ function drawRailTransitionCurve() {
 		var S = 1 / (Math.cos((delta / 2)*(Math.PI/180))) * F;//S
 		var W = (Rc + F)*Math.tan((delta / 2)*(Math.PI/180));//W
 		TL = x2 + W;// TL
-		var SPtoPC_bangwigack = 0;
-		var Cc = 0;//원곡선 중심점
 		
-		if (Rc * -1 < 0) {
-		  if (h1 - theta_pc_degree < 0) {
-		    SPtoPC_bangwigack = h1 - theta_pc_degree + 360;
-		  } else {
-		    SPtoPC_bangwigack = h1 - theta_pc_degree;
-		  }
-		} else {
-		  if (h1 + theta_pc_degree > 360) {
-		    SPtoPC_bangwigack = h1 + theta_pc_degree - 360;
-		  } else {
-		    SPtoPC_bangwigack = h1 + theta_pc_degree;
-		  }
-		}
+		var Cc = 0;//원곡선 중심점
 		
 		Lc = ((delta * Math.PI/180) - 2 * (theta_pc_degree * Math.PI/180)) * Rc; //원곡선 길이
 		var TotalL = Lc + 2 * Ls; //전체 CL
@@ -2081,15 +2067,16 @@ function drawRailTransitionCurve() {
 		
 		//PS에서 X1만큼 이동한 좌표
 		var x1_coordinate_Reverse = google.maps.geometry.spherical.computeOffset(ntp2, -x1, h2);
+		
 		//PC점 위치
 		var tditc0 = google.maps.geometry.spherical.computeOffset(x1_coordinate, TotalY, h1 + (90 * dir));
 		//CP점 위치
-		var tditc1 = google.maps.geometry.spherical.computeOffset(x1_coordinate_Reverse, TotalY, h1 + (90 * dir));
+		var tditc1 = google.maps.geometry.spherical.computeOffset(x1_coordinate_Reverse, TotalY, h2 + (90 * dir));
 		
 		//PC 접선 방위각
-		var PC_tangent_azimuth = h1 - theta_pc_degree;
+		var PC_tangent_azimuth = h1 + (theta_pc_degree * dir);//좌향일때 - 우향일때 +
 		//원곡선중심
-		var Cc = google.maps.geometry.spherical.computeOffset(tditc0, Rc, PC_tangent_azimuth + (90 * dir));
+		var Cc = google.maps.geometry.spherical.computeOffset(tditc0, Rc, PC_tangent_azimuth + (90 * dir));//좌향일때 - 우향일때 +
 		
 		// Cubic Parabola : TotalX = Ls  (full length of transition by assumption)
 		var parts = 30; // any value, higher = more precision
@@ -2513,9 +2500,9 @@ function drawRailTransitionCurve() {
 	    
 		var ec = new google.maps.LatLng(Cc.lat(),Cc.lng()),      
 			image= new google.maps.MarkerImage(imgurlCcCt,
-				new google.maps.Size(6, 6),
+				new google.maps.Size(10, 10),
 				new google.maps.Point(0, 0),
-				new google.maps.Point(3, 3)), 
+				new google.maps.Point(5, 5)), 
 		index =2,
 		marker = new google.maps.Marker({
 			position: Cc,
@@ -2536,9 +2523,9 @@ function drawRailTransitionCurve() {
 
 		var e3 = new google.maps.LatLng(ccSt.lat(),ccSt.lng()),      
 			image= new google.maps.MarkerImage(imgurlCcSt,
-				new google.maps.Size(6, 6),
+				new google.maps.Size(10, 10),
 				new google.maps.Point(0, 0),
-				new google.maps.Point(3, 3)), 
+				new google.maps.Point(5, 5)), 
 		index =3,
 		marker = new google.maps.Marker({
 			position: ccSt,
@@ -2559,9 +2546,9 @@ function drawRailTransitionCurve() {
 
 		var e4 = new google.maps.LatLng(ccEd.lat(),ccEd.lng()),      
 			image= new google.maps.MarkerImage(imgurlCcSt,
-				new google.maps.Size(6, 6),
+				new google.maps.Size(10, 10),
 				new google.maps.Point(0, 0),
-				new google.maps.Point(3, 3)), 
+				new google.maps.Point(5, 5)), 
 		index =4,
 		marker = new google.maps.Marker({
 			position: ccEd,
@@ -2779,7 +2766,7 @@ function curveCalculator(mod, lock) {
 		
 		if (document.getElementById('tc_cubic_parabola').checked) {
 		//cubic parabola
-			var m = 2100;
+			var m = 7.31 * v_ds; 
 			var x1 = m * (cant * 0.001);//X1
 			var theta_pc = Math.atan(x1 / (2 * Rc));//PC점의 접선각 라디안
 			var theta_pc_degree = 180 / Math.PI * (Math.atan (x1 / (2 * Rc))); //PC점의 접선각 도단위
@@ -3335,46 +3322,68 @@ function getElevation(event) {
   });
 }
 
+function saveElevationDataToFile(results) {
+    // Elevation data를 문자열로 변환
+    let elevationData = 'Distance (m), Elevation (m)\n';
+    for (let i = 0; i < results.length; i++) {
+        let distance = i * 25; // Assuming 25 meters interval
+        let elevation = results[i].elevation;
+        elevationData += `${distance}, ${elevation}\n`;
+    }
+
+    // Blob 객체 생성
+    let blob = new Blob([elevationData], { type: 'text/plain' });
+
+    // Blob URL 생성
+    let url = window.URL.createObjectURL(blob);
+
+    // 다운로드를 위한 링크 생성 및 클릭
+    let a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = 'elevation_data.txt';
+
+    document.body.appendChild(a);
+    a.click();
+
+    // 링크 및 Blob URL 정리
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
 // Takes an array of ElevationResult objects, draws the path on the map
 // and plots the elevation profile on a Visualization API ColumnChart.
+// plotElevation 함수 수정
 function plotElevation(results, status) {
 	if (status == google.maps.ElevationStatus.OK) {
-  	elevations = results;
+		elevations = results;
 
-    // Extract the elevation samples from the returned results
-    // and store them in an array of LatLngs.
-    var elevationPath = [];
-    for (var i = 0; i < results.length; i++) {
-    	elevationPath.push(elevations[i].location);
-    }
-
-    // Extract the data from which to populate the chart.
-    // Because the samples are equidistant, the 'Sample'
-    // column here does double duty as distance along the
-    // X axis.
-    data = new google.visualization.DataTable();
-    data.addColumn('string', 'Distance');
-    data.addColumn('number', 'Elevation');
-    data.addColumn('number', 'Track');
-        
-    for (var i = 0; i < results.length; i++) {
-    	data.addRow([(i*25).toString(), elevations[i].elevation, elevations[i].elevation]); 
-    }
-
-    //2do 29-1-2013
-    //redraw elevation if exist 
-    //[X, note, pitch, bdata, kit]
-    var arrElv0 =  $('#txtPitchDetails').val().split('\n');
-    var arrElv = [];
-    for (var ei=0; ei < arrElv0.length; ei++) {
-    	arrElv.push(arrElv0[ei].split(','));
-    }
-    
-		//reload last point
-		var pitch0 = null; var Xd0 = 0;
 		
+
+		// 이하의 코드는 기존의 plotElevation 함수 내용
+		var elevationPath = [];
+		for (var i = 0; i < results.length; i++) {
+			elevationPath.push(elevations[i].location);
+		}
+
+		data = new google.visualization.DataTable();
+		data.addColumn('string', 'Distance');
+		data.addColumn('number', 'Elevation');
+		data.addColumn('number', 'Track');
+        
+		for (var i = 0; i < results.length; i++) {
+			data.addRow([(i * 25).toString(), elevations[i].elevation, elevations[i].elevation]); 
+		}
+
+		// 추가 고도 데이터 처리
+		var arrElv0 = $('#txtPitchDetails').val().split('\n');
+		var arrElv = [];
+		for (var ei = 0; ei < arrElv0.length; ei++) {
+			arrElv.push(arrElv0[ei].split(','));
+		}
+		
+		var pitch0 = null; var Xd0 = 0;
 		var arrlast = arrElv[0][4].split('§');
-		//console.log(arrlast);
 		for (iv = 0; iv < arrlast.length; iv++) {
 			if (arrlast[iv].indexOf('lastheight:') == 0) {
 				var lastH = parseFloat(arrlast[iv].split(':')[1]);
@@ -3385,58 +3394,54 @@ function plotElevation(results, status) {
 			}			
 		}
 		
-		// test dan cek balik bhg ini 30/1/2013 - start
-		for (var ev=0; ev < arrElv.length; ev++) {
-    	if (arrElv[ev][2] != '') {
+		for (var ev = 0; ev < arrElv.length; ev++) {
+			if (arrElv[ev][2] != '') {
 				if (pitch0 == null) {
 					pitch0 = parseFloat(arrElv[ev][2]);
 					Xd0 = parseInt(arrElv[ev][0]);
 				} else {
-					if (parseFloat(arrElv[ev][2]) != pitch0 ) {
-		  			var pitchA = pitch0/1000;
-				    var y1; var y2;
-		    		var cgsp = Xd0;
-		    		var cgep = parseInt(arrElv[ev][0]);
+					if (parseFloat(arrElv[ev][2]) != pitch0) {
+						var pitchA = pitch0 / 1000;
+						var y1; var y2;
+						var cgsp = Xd0;
+						var cgep = parseInt(arrElv[ev][0]);
 		    			
-		    		for (i = 0; i < data.getNumberOfRows(); i++) {
-		    			if (cgsp == parseInt(data.getValue(i, 0))) { 
-		    				y1 = parseFloat(data.getValue(i, 2)); 						
-		    			}
+						for (i = 0; i < data.getNumberOfRows(); i++) {
+							if (cgsp == parseInt(data.getValue(i, 0))) { 
+								y1 = parseFloat(data.getValue(i, 2)); 						
+							}
 		    	    
-  	  				if ((parseInt(data.getValue(i, 0)) >= cgsp) && (parseInt(data.getValue(i, 0)) <= cgep)) { 
-  	  					var y2 = pitchA*(parseInt(data.getValue(i, 0)) - cgsp) + y1; 
-	  	  				data.setValue(i, 2, y2);
-	  	  				if (i == data.getNumberOfRows() -1) {
-	  	  					$('#LLlastheight').val(y2);
-	  	  					$('#LLlastpitch').val(pitchA*1000);
-	  						}
-	  	  			} 
-	    			}
-	  				pitch0 = parseFloat(arrElv[ev][2]);
+							if ((parseInt(data.getValue(i, 0)) >= cgsp) && (parseInt(data.getValue(i, 0)) <= cgep)) { 
+								var y2 = pitchA * (parseInt(data.getValue(i, 0)) - cgsp) + y1; 
+								data.setValue(i, 2, y2);
+								if (i == data.getNumberOfRows() - 1) {
+									$('#LLlastheight').val(y2);
+									$('#LLlastpitch').val(pitchA * 1000);
+								}
+							} 
+						}
+						pitch0 = parseFloat(arrElv[ev][2]);
 						Xd0 = parseInt(arrElv[ev][0]);
 					}
 				}
 			}
 		}
-		// test dan cek balik bhg ini 30/1/2013 - end
 		
-		wd = (results.length * 10) + 80; // target +/- 6px per bar
-					
+		wd = (results.length * 10) + 80; // 바 당 약 6픽셀
 		if (wd < 770) { wd = 770; }
 					
-    // Draw the chart using the data within its DIV.
-    document.getElementById('elevation_chart').style.display = 'block';
-    document.getElementById('elevation_chart').style.overflow = 'auto';
-    chart.draw(data, {
-    	width: wd,
-      height: 210,
-      legend: 'none',
-      titleY: $.lang.convert('Elevation (m)'),
-      titleX: $.lang.convert('Distance (m) + ') + $('#txtPitchStartPointAtM').val() + ' m'
-   	});
-
-
-   }
+		document.getElementById('elevation_chart').style.display = 'block';
+		document.getElementById('elevation_chart').style.overflow = 'auto';
+		chart.draw(data, {
+			width: wd,
+			height: 210,
+			legend: 'none',
+			titleY: $.lang.convert('Elevation (m)'),
+			titleX: $.lang.convert('Distance (m) + ') + $('#txtPitchStartPointAtM').val() + ' m'
+		});
+		// 고도 데이터를 txt 파일로 저장
+		saveElevationDataToFile(results);
+	}
 }
 
 function presetMarkerNote(pid, mid) {
@@ -5283,7 +5288,7 @@ function processCurve(rowsData, i) {
 	 
 				var e1 = st,      
 					image = new google.maps.MarkerImage(imgurl,
-					new google.maps.Size(6, 6),
+					new google.maps.Size(10, 10),
 					new google.maps.Point(0, 0),
 					new google.maps.Point(5, 5)), 
 					index =0,
@@ -5308,7 +5313,7 @@ function processCurve(rowsData, i) {
 
 				var e2 = ed,      
 					image= new google.maps.MarkerImage(imgurl2,
-						new google.maps.Size(6, 6),
+						new google.maps.Size(10, 10),
 						new google.maps.Point(0, 0),
 						new google.maps.Point(5, 5)), 
 					index =1,
@@ -5332,9 +5337,9 @@ function processCurve(rowsData, i) {
 					
 				var ec = Cc,      
 					image= new google.maps.MarkerImage(imgccurl,
-						new google.maps.Size(6, 6),
+						new google.maps.Size(10, 10),
 						new google.maps.Point(0, 0),
-						new google.maps.Point(3, 3)), 
+						new google.maps.Point(5, 5)), 
 					index =2,
 					marker = new google.maps.Marker({
 						position: Cc,
@@ -5724,10 +5729,10 @@ function processTCurve(rowsData, i) {
 					tcurve = new google.maps.Polyline({
 					path: tarr,
 					strokeColor: "#00E600",
-					strokeOpacity: 0.7,
+					strokeOpacity: 1,
 					geodesic: true,
 					map: map,
-					strokeWeight: 1
+					strokeWeight: 4
 				});
 									
 				++MapToolbar["tcurveCounter"];
@@ -5782,9 +5787,9 @@ function processTCurve(rowsData, i) {
 				
 				var e1 = new google.maps.LatLng(Ttst.lat(),Ttst.lng()),      
 					image = new google.maps.MarkerImage(imgurlTcSt,
-						new google.maps.Size(16, 16),
+						new google.maps.Size(10, 10),
 						new google.maps.Point(0, 0),
-						new google.maps.Point(8, 8)), 
+						new google.maps.Point(5, 5)), 
 					index =0,
 					marker = new google.maps.Marker({
 						position: Ttst,
@@ -5806,9 +5811,9 @@ function processTCurve(rowsData, i) {
 					
 				var e2 = new google.maps.LatLng(Tted.lat(),Tted.lng()),      
 					image= new google.maps.MarkerImage(imgurlTcSt,
-						new google.maps.Size(16, 16),
+						new google.maps.Size(10, 10),
 						new google.maps.Point(0, 0),
-						new google.maps.Point(8, 8)), 
+						new google.maps.Point(5, 5)), 
 					index =1,
 					marker = new google.maps.Marker({
 						position: Tted,
@@ -5829,9 +5834,9 @@ function processTCurve(rowsData, i) {
 					
 					var ec = new google.maps.LatLng(Cc.lat(),Cc.lng()),      
 						image= new google.maps.MarkerImage(imgurlCcCt,
-							new google.maps.Size(6, 6),
+							new google.maps.Size(10, 10),
 							new google.maps.Point(0, 0),
-							new google.maps.Point(3, 3)), 
+							new google.maps.Point(5, 5)), 
 					index =2,
 					marker = new google.maps.Marker({
 						position: Cc,
@@ -5852,9 +5857,9 @@ function processTCurve(rowsData, i) {
 
 					var e3 = new google.maps.LatLng(Tcst.lat(),Tcst.lng()),      
 						image= new google.maps.MarkerImage(imgurlCcSt,
-							new google.maps.Size(6, 6),
+							new google.maps.Size(10, 10),
 							new google.maps.Point(0, 0),
-							new google.maps.Point(3, 3)), 
+							new google.maps.Point(5, 5)), 
 					index =3,
 					marker = new google.maps.Marker({
 						position: Tcst,
@@ -5875,9 +5880,9 @@ function processTCurve(rowsData, i) {
 
 					var e4 = new google.maps.LatLng(Tced.lat(),Tced.lng()),      
 						image= new google.maps.MarkerImage(imgurlCcSt,
-							new google.maps.Size(6, 6),
+							new google.maps.Size(10, 10),
 							new google.maps.Point(0, 0),
-							new google.maps.Point(3, 3)), 
+							new google.maps.Point(5, 5)), 
 					index =4,
 					marker = new google.maps.Marker({
 						position: Tced,
@@ -6767,7 +6772,7 @@ function ReloadPolyline (loadPoly,rd, n, rowsData, i, quickScan) {
  
 			var e1 = st,      
 				image = new google.maps.MarkerImage(imgurl,
-				new google.maps.Size(6, 6),
+				new google.maps.Size(10, 10),
 				new google.maps.Point(0, 0),
 				new google.maps.Point(5, 5)), 
 				index =0,
@@ -6792,7 +6797,7 @@ function ReloadPolyline (loadPoly,rd, n, rowsData, i, quickScan) {
 
 			var e2 = ed,      
 				image= new google.maps.MarkerImage(imgurl2,
-					new google.maps.Size(6, 6),
+					new google.maps.Size(10, 10),
 					new google.maps.Point(0, 0),
 					new google.maps.Point(5, 5)), 
 				index =1,
@@ -6816,9 +6821,9 @@ function ReloadPolyline (loadPoly,rd, n, rowsData, i, quickScan) {
 				
 			var ec = Cc,      
 				image= new google.maps.MarkerImage(imgccurl,
-					new google.maps.Size(6, 6),
+					new google.maps.Size(10, 10),
 					new google.maps.Point(0, 0),
-					new google.maps.Point(3, 3)), 
+					new google.maps.Point(5, 5)), 
 				index =2,
 				marker = new google.maps.Marker({
 					position: Cc,
